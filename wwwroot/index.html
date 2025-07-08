@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/x-icon" href="\images\burgas.ico" />
+    <link
+      rel="stylesheet"
+      href="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/style.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/inspire-tree-dom@4.0.6/dist/inspire-tree-light.min.css"
+    />
+    <!-- scripts -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.min.js"></script>
+    <script src="https://unpkg.com/inspire-tree@4.3.1/dist/inspire-tree.js"></script>
+    <script src="https://unpkg.com/inspire-tree-dom@4.0.6/dist/inspire-tree-dom.min.js"></script>
+    <script src="/main.js" type="module"></script>
+    <!-- IDOM CSS Styles -->
+    <link rel="stylesheet" href="./main.css" />
+    <link rel="stylesheet" href="./formulario.css" />
+    <link rel="stylesheet" href="./toggle-button.css" />
+    <title>Burgas BIM Application</title>
+  </head>
+
+  <body>
+    <div id="header">
+      <img
+        class="logo"
+        src="https://images.squarespace-cdn.com/content/v1/56e03aab7da24fcf36e00d86/1554226673661-RMD3ZSBSZ163GZXPFVHA/Burgas+Municipality+logo+1.png"
+        alt="Autodesk Platform Services"
+        style="width: 150; height: 120px; margin-left: 0px"
+      />
+      <span class="title"
+        >Hubs Browser
+        <div class="switch-button">
+          <input
+            type="checkbox"
+            name="switch-button"
+            id="switch-label"
+            class="switch-button__checkbox"
+            onchange="handleChange()"
+          />
+          <label for="switch-label" class="switch-button__label"></label>
+        </div>
+      </span>
+      <button id="login">Login</button>
+    </div>
+    <div id="sidebar">
+      <div id="tree"></div>
+    </div>
+    <div id="preview"></div>
+    <script>
+      function handleChange() {
+        var panel = document.getElementById("sidebar");
+        //Encender
+        //Si el panel está oculto lo enciendes
+        if (panel.style.display === "none") {
+          panel.style.display = "block";
+        }
+        //Apagar
+        else {
+          panel.style.display = "none";
+        }
+        window.dispatchEvent(new Event("resize"));
+      }
+    </script>
+    <script>
+      //No cargo la barra hasta la primera vez que aparece el visor
+      $(document).ready(function () {
+        $(document).on("DOMNodeInserted", function (e) {
+          if ($(e.target).hasClass("orbit-gizmo")) {
+            // to make sure we get the viewer, let's use the global var NOP_VIEWER
+            if (NOP_VIEWER === null || NOP_VIEWER === undefined) return;
+            // NOP_VIEWER.addEventListener(Autodesk.Viewing.GEOMETRY_LOADED_EVENT, (viewer) => {
+            //     var sidebar = document.getElementById("sidebar")
+            //     var panel = document.getElementById("PanelDeProyectos");
+            //     panel.style.display = "none";
+            //     sidebar.style.display = "block"
+            // });
+            NOP_VIEWER.addEventListener(
+              Autodesk.Viewing.OBJECT_TREE_CREATED_EVENT,
+              (viewer) => {
+                var panel = document.getElementById("sidebar");
+                panel.style.display = "none";
+                NOP_VIEWER.resize();
+              }
+            );
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

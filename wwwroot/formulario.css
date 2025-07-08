@@ -1,0 +1,100 @@
+/* Estilos para el formulario */
+form {
+    width: auto;
+    margin: 0 auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f5f5f5;
+}
+.borrar-boton {
+    background-color: #ff5a5f;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+}
+
+/* Cambiar color al pasar sobre el botón */
+.borrar-boton:hover {
+    background-color: #ff373c; /* Rojo más oscuro */
+}
+/* Estilos para las etiquetas */
+label {
+    display: block;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+.columns{
+    list-style: none;
+    padding: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+/* Estilos para los campos de entrada de texto */
+input:read-only{
+    background-color: #f5f5f5;
+}
+input[type="text"] {
+    width: 90%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+textarea {
+    width: 95%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+.link-input{
+    border: none;
+            color: blue; /* Color del enlace */
+            text-decoration: underline; /* Subrayado del enlace */
+            cursor: pointer; /* Cursor de mano al pasar sobre el campo */
+}
+
+/* Estilos para el botón de envío */
+input[type="submit"] {
+    background-color: #007bff;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* Estilos para el botón de envío al pasar el cursor sobre él */
+input[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+/* Estilos para las secciones colapsables */
+details {
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    margin-bottom: 10px;
+    padding: 10px;
+    
+}
+
+summary {
+    font-weight: bold;
+    font-family: 'Open Sns', sans-serif;
+    font-size: large;
+    color: #0026ff;
+    cursor: pointer;
+    font-weight: bold;
+}

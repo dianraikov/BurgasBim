@@ -1,0 +1,120 @@
+<head>
+  <meta
+    name="viewport"
+    content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=no"
+  />
+  <meta charset="utf-8" />
+
+  <link
+    rel="stylesheet"
+    href="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/style.min.css"
+    type="text/css"
+  />
+  <script src="https://developer.api.autodesk.com/modelderivative/v2/viewers/7.*/viewer3D.min.js"></script>
+  <!-- Common packages: jQuery, Bootstrap, jsTree -->
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/jstree/3.3.7/jstree.min.js"></script>
+  <script src="./extensions/burgaspanel_equipments.js"></script>
+  <script src="./extensions/burgaspanel_rooms.js"></script>
+  <script src="./extensions/VerticalToolbarExtensions.js"></script>
+  <script src="./extensions/aislarRooms.js"></script>
+  <script src="./extensions/ColorExtension.js"></script>
+  <script src="./extensions/ColorExtension1.js"></script>
+  <script src="./extensions/burgas_editFieldsRooms.js"></script>
+  <script src="./extensions/burgas_editFieldsEquipment.js"></script>
+  <link
+    rel="stylesheet"
+    href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css"
+  />
+  <link
+    rel="stylesheet"
+    href="//cdnjs.cloudflare.com/ajax/libs/jstree/3.3.7/themes/default/style.min.css"
+  />
+  <!-- Hoja de estilos IDOM -->
+  <link rel="stylesheet" href="./main.css">
+  <link rel="stylesheet" href="./formulario.css">
+  <style>
+    body {
+      margin: 0;
+    }
+
+    #forgeViewer {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background-color: #f0f8ff;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="forgeViewer"></div>
+  <!-- MAM CODE -->
+  <script>
+    var viewer;
+
+    function launchViewer(urn) {
+      var options = {
+        env: "AutodeskProduction",
+        getAccessToken: getForgeToken,
+      };
+
+      Autodesk.Viewing.Initializer(options, () => {
+        viewer = new Autodesk.Viewing.GuiViewer3D(
+          document.getElementById("forgeViewer"),
+          {
+            extensions: [
+              "Autodesk.VisualClusters",
+              "Autodesk.DocumentBrowser",
+              "Autodesk.Hyperlink",
+              "verticalToolbar",
+              "aislarRooms",
+              "ColorExtension",
+              "ColorExtension1",
+              "BurgasPanelExtension_Rooms",
+              "BurgasPanelExtension_Equipments",
+              "editFieldsRooms_Extension",
+              "editFieldsEquipment_Extension"
+            ],
+          }
+        );
+        viewer.start();
+        viewer.setTheme('light-theme')
+        viewer.isolate(3703)
+        var documentId = "urn:" + urn;
+        Autodesk.Viewing.Document.load(
+          documentId,
+          onDocumentLoadSuccess,
+          onDocumentLoadFailure
+        );
+        viewer.isolate(3703)
+      });
+    }
+
+    function onDocumentLoadSuccess(doc) {
+      // La comentada es para obtener todas las vistas del modelo
+      // var viewables = doc.getRoot().getDefaultGeometry();
+      var viewables = doc.getRoot().findByGuid('c884ae1b-61e7-4f9d-0001-719e20b22d0b-0043cd5c');
+      viewer.loadDocumentNode(doc, viewables).then((i) => {
+        // documented loaded, any action?
+      });
+    }
+
+    function onDocumentLoadFailure(viewerErrorCode) {
+      console.error("onDocumentLoadFailure() - errorCode:" + viewerErrorCode);
+    }
+
+    function getForgeToken(callback) {
+      fetch("/api/auth/token").then((res) => {
+        res.json().then((data) => {
+          callback(data.access_token, data.expires_in);
+        });
+      });
+    }
+    launchViewer(
+      "dXJuOmFkc2sud2lwcHJvZDpmcy5maWxlOnZmLllIbmxMbXpfVGlDN3E1WjNuU3NKeHc_dmVyc2lvbj0x"
+    );
+  </script>
+</body>
