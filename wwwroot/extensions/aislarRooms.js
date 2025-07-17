@@ -39,7 +39,20 @@ aislarRooms.prototype.createUI = function() {
     // Button 1
     var button1 = new Autodesk.Viewing.UI.Button('my-view-front-button');
     button1.onClick = function(e) {
-        viewer.isolate(3703)
+        // viewer.isolate(3703)
+        //start new search room line
+      viewer.search(
+        "Room",
+        (dbIds) => {
+          viewer.model.getProperties(dbIds[0], (data) => {
+            viewer.isolate(data.properties[3].displayValue);
+          });
+        },
+        (error) => reject(error),
+        ["Category"],
+        { searchHidden: true}
+        );
+//end new search room line
     };
     button1.addClass('my-view-front-button');
     button1.setToolTip('View front');

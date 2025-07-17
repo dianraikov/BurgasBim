@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express'); // npm install express
 const session = require('cookie-session'); // npm install cookie-session
 const { PORT, SERVER_SESSION_SECRET } = require('./config.js'); // importa PORT de config.js

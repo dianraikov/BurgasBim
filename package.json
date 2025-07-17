@@ -12,13 +12,14 @@
     "dependencies": {
         "cookie-session": "^2.0.0",
         "cors": "^2.8.5",
+        "dotenv": "^17.2.0",
         "express": "^4.18.2",
         "express-formidable": "^1.2.0",
         "forge-apis": "^0.9.6",
         "mssql": "*",
         "node": "*",
         "oracledb": "^6.0.3",
-        "package.json": "^2.0.1",
+        "package.json": "^0.0.0",
         "pg": "^8.11.3",
         "rest-mssql-nodejs": "*",
         "tedious": "*"
