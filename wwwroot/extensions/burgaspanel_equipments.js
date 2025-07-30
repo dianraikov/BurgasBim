@@ -8,111 +8,77 @@ class BurgasPanelExtension_Equipments extends Autodesk.Viewing.Extension {
     elements.forEach(function (element) {
       var num_hab = element.properties[0].displayValue;
       var conexion = "/api/query/pg_get_equipment/?room_code=" + num_hab;
+  
       fetch(conexion)
         .then((response) => response.json())
         .then(function (data) {
           var formulario = document.createElement("form");
           formulario.id = "burgasFormEquipments";
-          // Crear un elemento de entrada de tipo submit
-          // var botonEnviar = document.createElement("input");
-          // botonEnviar.type = "submit";
-          // botonEnviar.value = "Enviar";
-          // botonEnviar.value = "Enviar";
-          // formulario.appendChild(botonEnviar);
-          // Agregar un salto de línea
           formulario.appendChild(document.createElement("br"));
-          //Obtener el div generado al crearse el paneld
+  
           var div = document.getElementById("panelContentEquipments");
-          //Se incluye el formulario en el div
           div.appendChild(formulario);
-          //Bucle para generar los campos
+  
+          const labels = ["Код на помещението","скрива се","Код на оборудването","Вид оборудването","скрива се","Категория","Под категория","Общо бройки","Забележка оборудването","скрива се","скрива се","Доставна цена с ДДС","скрива се","Марка","Модел","Дата на въвеждане в експлотация","Общи забележки","Линк към оборудването","Поддръжка","скрива се","Линк за","Доставчик","Гаранционен срок"];
+  
           data.forEach((equipo) => {
-            //Crear seccion colapsable
             var details = document.createElement("details");
             var summary = document.createElement("summary");
             var fieldset = document.createElement("fieldset");
-            // summary.innerHTML = "Equipos";
-            for (const prop in equipo) {
-              //FILTRO CAMPO DE HAb.
-              // Crear un elemento de etiqueta para el campo de entrada de texto
+            const fields = Object.entries(equipo);
+  
+            fields.forEach(([prop, val], index) => {
+              if (labels[index] && labels[index].toLowerCase() === "скрива се") return;
+              let displayLabel = labels[index] || prop;
+              displayLabel = displayLabel.charAt(0).toUpperCase() + displayLabel.slice(1);
+  
               var etiquetaNombre = document.createElement("label");
               etiquetaNombre.id = "atributo";
-              etiquetaNombre.textContent = prop;
-              // Crear un elemento de entrada de texto
-              if (prop == "REFERENCE_SPECIFICATIONS") {
-                var inputNombre = document.createElement("textarea");
-                // var inputNombre = document.createElement("input");
-                // inputNombre.type = "text";
-                inputNombre.id = "textarea";
-                inputNombre.name = prop;
-              }else{
-                var inputNombre = document.createElement("input");
-                inputNombre.type = "text";
-                inputNombre.id = "valor";
-                inputNombre.name = prop;
-              }
-              if (prop == "ID_EQUIP") {
-                summary.innerHTML = equipo[prop];
-                var id_equip = equipo[prop];
-              }
-              if (prop == "URL") {
+              etiquetaNombre.textContent = displayLabel;
+  
+              var inputNombre = (prop === "REFERENCE_SPECIFICATIONS") ? document.createElement("textarea") : document.createElement("input");
+              if (prop !== "REFERENCE_SPECIFICATIONS") inputNombre.type = "text";
+              inputNombre.id = (prop === "REFERENCE_SPECIFICATIONS") ? "textarea" : "valor";
+              inputNombre.name = prop;
+  
+              if (prop === "ID_EQUIP") { summary.innerHTML = val; var id_equip = val; }
+              if (prop === "URL") {
                 inputNombre.className = "link-input";
-                inputNombre.addEventListener("click", function () {
-                  // Obtener la URL del campo de texto
-                  var url = equipo[prop];
-                  // Abrir la URL en una nueva ventana o pestaña
-                  window.open(url, "_blank");
-                });
+                inputNombre.addEventListener("click", function () { window.open(val, "_blank"); });
               }
-              inputNombre.value = equipo[prop];
+              if( prop === "docs_link")
+              {
+                inputNombre.className = "link-input";
+                inputNombre.addEventListener("click", function () { window.open(val, "_blank"); });
+              }
+              inputNombre.value = val;
               inputNombre.required = true;
-              if (prop == "ID_EQUIP" || prop=="NUMERO_HABITACION") {
-                inputNombre.readOnly = true
-              }
-              //Funcion-evento para enviar y actualizar los datos a la bbdd
+              if (prop === "ID_EQUIP" || prop === "NUMERO_HABITACION") inputNombre.readOnly = true;
+  
               inputNombre.addEventListener("focusout", function (event) {
-                // event.preventDefault(); // Evitar el envío predeterminado del formulario
-                let element = event.target;
-                var columna = element.name;
-                var valor = element.value;
-                // Crear un objeto con los datos que deseas enviar al servidor
-                var datos = {
-                  id_equip: id_equip,
-                  num_hab: num_hab,
-                  columna: columna,
-                  valor: valor,
-                };
-                // Realizar una solicitud HTTP POST al servidor
+                let element = event.target, columna = element.name, valor = element.value;
+                var datos = { id_equip: id_equip, num_hab: num_hab, columna: columna, valor: valor };
                 fetch("/api/query/pg_post_equipment", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify(datos),
+                  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datos)
                 })
                   .then((response) => response.json())
-                  .then((data) => {
-                    // Manejar la respuesta del servidor aquí
-                    console.log(data);
-                  })
-                  .catch((error) => {
-                    console.error("Error al enviar los datos:", error);
-                  });
+                  .then((data) => console.log(data))
+                  .catch((error) => console.error("Error al enviar los datos:", error));
               });
-              //Join de secciones colapsables
+  
               fieldset.appendChild(etiquetaNombre);
               fieldset.appendChild(inputNombre);
-              // Agregar un salto de línea
-              // formulario.appendChild(document.createElement("br"));
-
               details.appendChild(summary);
               details.appendChild(fieldset);
               formulario.appendChild(details);
-            }
+            });
           });
         });
     });
   }
+  
+  
+  
 
   loadObjectCode(elements) {
     var form = document.getElementById("burgasFormEquipments");

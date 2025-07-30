@@ -163,10 +163,10 @@ class editFieldsEquipment_Extension extends Autodesk.Viewing.Extension {
           });
       }
     };
-    this._button.addClass("editFieldEquipmentIcon");
-    this._button.setToolTip("Edit Field Equipment Panel");
-    this.subToolbar.addControl(this._button);
-    this.subToolbar.setVisible(true);
+    //this._button.addClass("editFieldEquipmentIcon");
+    //this._button.setToolTip("Edit Field Equipment Panel");
+    //this.subToolbar.addControl(this._button);
+    //this.subToolbar.setVisible(true);
   }
 }
 

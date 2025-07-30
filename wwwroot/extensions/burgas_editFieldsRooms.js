@@ -158,10 +158,10 @@ class editFieldsRooms_Extension extends Autodesk.Viewing.Extension {
       }
     };
 
-    this._button.addClass("editFieldIcon");
-    this._button.setToolTip("Edit Field Panel");
-    this.subToolbar.addControl(this._button);
-    this.subToolbar.setVisible(true);
+    //this._button.addClass("editFieldIcon");
+   //this._button.setToolTip("Edit Field Panel");
+    //this.subToolbar.addControl(this._button);
+    //this.subToolbar.setVisible(true);
   }
 }
 

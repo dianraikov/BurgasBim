@@ -3,6 +3,7 @@ class ColorExtension1 extends Autodesk.Viewing.Extension {
     super(viewer, options);
     this._group = null;
     this._button = null;
+    this._panel = null;
     this.viewer = viewer;
   }
 
@@ -13,34 +14,49 @@ class ColorExtension1 extends Autodesk.Viewing.Extension {
 
   unload() {
     console.log("ColorExtension1 is now unloaded!");
+    if (this._group && this._button) {
+      this._group.removeControl(this._button);
+    }
+    if (this._panel) {
+      this._panel.setVisible(false);
+    }
     return true;
   }
 
+  // Find all leaf nodes
   findLeafNodes(model) {
-    // metodo para encontrar los nodos hoja
     return new Promise(function (resolve, reject) {
-      // retorna una promesa
       model.getObjectTree(function (tree) {
-        // obtiene el arbol de objetos
-        let leaves = []; // crea un array para almacenar los nodos hoja
+        let leaves = [];
         tree.enumNodeChildren(
           tree.getRootId(),
           function (dbid) {
-            // enumera los hijos del nodo raiz
             if (tree.getChildCount(dbid) === 0) {
-              // si el nodo no tiene hijos
-              leaves.push(dbid); // lo agrega al array de nodos hoja
-            } // fin si
+              leaves.push(dbid);
+            }
           },
-          true /* recursively enumerate children's children as well */
+          true
         );
-        resolve(leaves); //     resuelve la promesa con el array de nodos hoja
-      }, reject); // fin get object tree
+        resolve(leaves);
+      }, reject);
     });
   }
 
-  onToolbarCreated() {
-    // Create a new toolbar group if it doesn't exist
+  // Fetch buildingtype from backend API
+  async getBuildingType() {
+    try {
+      const resp = await fetch("/api/query/buildingtype");
+      if (!resp.ok) return null;
+      const data = await resp.json();
+      return (data.buildingtype || "").toUpperCase();
+    } catch (e) {
+      console.error("Error fetching buildingtype:", e);
+      return null;
+    }
+  }
+
+  async onToolbarCreated() {
+    // Create group if doesn't exist
     this._group = this.viewer.toolbar.getControl("BurgasColoursToolbarGroup");
     if (!this._group) {
       this._group = new Autodesk.Viewing.UI.ControlGroup(
@@ -48,37 +64,56 @@ class ColorExtension1 extends Autodesk.Viewing.Extension {
       );
       this.viewer.toolbar.addControl(this._group);
     }
-    //this._panel = new panelLeyenda(this.viewer.container,'panelLeyenda','Leyenda');
-    //this._panel = new container(/wwwroot/PanelLeyenda.html);
-    var panel = new executePanel1(
+
+    // Get buildingtype from backend
+    const buildingtype = await this.getBuildingType();
+    console.log('Building type from database:', buildingtype);
+
+    // Choose which URL to load based on buildingtype
+    const panelMap = {
+      "CHILDREN HOSPITAL": "/PanelLeyenda02.html",
+      DEFAULT: "/PanelLeyenda1.html"
+    };
+
+    const panelUrl = panelMap[buildingtype] || panelMap.DEFAULT;
+    console.log('Selected panel URL:', panelUrl);
+
+    // Create panel
+    this._panel = new executePanel1(
       this.viewer,
       this.viewer.container,
       "ejecutado",
       "Area",
-      { url: "/PanelLeyenda1.html" }
+      { url: panelUrl }
     );
+
+    // Create button
     this._button = new Autodesk.Viewing.UI.Button("ColorExtension1Button");
-    this._button.onClick = () => {
-      //this._panel.addProperty('CARE AREA');
-      //this._panel.addProperty('GENERAL SUPPORT AREA');
-      //this._panel.addProperty('CARE SUPPORT AREA');
+    this._button.onClick = async () => {
+      const panel = this._panel;
+
       if (panel.isVisible()) {
         panel.setVisible(false);
         this._button.removeClass("active");
-        //model.clearThemingColors();
+        this.viewer.clearThemingColors();
       } else {
         panel.setVisible(true);
         this._button.addClass("active");
       }
 
       const model = this.viewer.model;
-      const dbids = this.findLeafNodes(model);
+      let dbids = this.viewer.getSelection();
+      if (!dbids || dbids.length === 0) {
+        dbids = await this.findLeafNodes(model);
+      }
+
+      // Color by ARE_GeneralArea
       model.getBulkProperties(
-        this.viewer.getSelection(),
+        dbids,
         { propFilter: ["ARE_GeneralArea"], categoryFilter: ["Rooms"] },
         (results) => {
-          var selection = this.viewer.getSelection();
-          this.viewer.fitToView( selection );
+          if (dbids.length) this.viewer.fitToView(dbids);
+
           for (const result of results) {
             if (result.properties.length > 0) {
               const prop = result.properties[0];
@@ -100,6 +135,7 @@ class ColorExtension1 extends Autodesk.Viewing.Extension {
               }
             }
           }
+
           if (!panel.isVisible()) {
             this.viewer.clearThemingColors();
           }
@@ -112,16 +148,18 @@ class ColorExtension1 extends Autodesk.Viewing.Extension {
     this._group.addControl(this._button);
   }
 }
+
 class executePanel1 extends Autodesk.Viewing.UI.DockingPanel {
   constructor(viewer, container, id, title, options) {
     super(container, id, title, options);
+    this.viewer = viewer;
     this.div = document.createElement("div");
     this.div.className = "LeyendaTematica";
     this.iframe = document.createElement("iframe");
     this.iframe.src = options.url;
     this.iframe.style.width = "100%";
     this.iframe.style.height = "200px";
-    this.iframe.frameborder = 0;
+    this.iframe.frameBorder = 0;
     this.div.appendChild(this.iframe);
     this.container.appendChild(this.div);
   }
@@ -130,18 +168,16 @@ class executePanel1 extends Autodesk.Viewing.UI.DockingPanel {
     this.container.style.top = "5px";
     this.container.style.left = "5px";
     this.container.style.height = "200px";
-    this.container.style.resize = "auto";
     this.container.style.width = "220px";
-
+    this.container.style.resize = "auto";
     this.container.style.right = "10px";
 
-    // allow move
     this.initializeMoveHandlers(this.container);
 
-    // close button
     this.closeButton = this.createCloseButton();
     this.closeButton.addEventListener("click", () => {
-      viewer.clearThemingColors();
+      this.viewer.clearThemingColors();
+      this.setVisible(false);
     });
     this.container.appendChild(this.closeButton);
     this.container.appendChild(this.createFooter());

@@ -1,6 +1,8 @@
 import { initViewer, loadModel } from './viewer.js'; //importamos las funciones de viewer.js
 import { initTree } from './sidebar.js'; //importamos las funciones de sidebar.js
 
+//console.log(`${user.name}`);
+
 const login = document.getElementById('login'); //obtenemos el elemento con id login
 try {
     const resp = await fetch('/api/auth/profile'); //hacemos una peticion a la ruta /api/auth/profile
