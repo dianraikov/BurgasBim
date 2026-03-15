@@ -12,6 +12,10 @@ class BurgasPanelExtension_Rooms extends Autodesk.Viewing.Extension {
       fetch(conexion)
         .then((response) => response.json())
         .then(function (data) {
+          if (!data || data.length === 0) {
+            console.warn('burgaspanel_rooms: no data returned for room code', num_hab);
+            return;
+          }
           var formulario = document.createElement("form");
           formulario.id = "burgasFormRooms";
 
@@ -44,12 +48,12 @@ class BurgasPanelExtension_Rooms extends Autodesk.Viewing.Extension {
             const value = data[0][originalKey];
 
             var etiquetaNombreHab = document.createElement("label");
-            etiquetaNombreHab.id = "atributo_room";
+            etiquetaNombreHab.id = "atributo_room_" + index;
             etiquetaNombreHab.textContent = key;
 
             var inputNombreHab = document.createElement("input");
             inputNombreHab.type = "text";
-            inputNombreHab.id = "valor_room";
+            inputNombreHab.id = "valor_room_" + index;
             inputNombreHab.name = originalKey;
             inputNombreHab.value = value;
             inputNombreHab.required = true;
@@ -162,14 +166,18 @@ class BurgasPanelExtension_Rooms extends Autodesk.Viewing.Extension {
       );
     }
 
-    this.subToolbar = this.viewer.toolbar.getControl(
+    const toolbar = this.viewer.burgasToolbar || this.viewer.toolbar;
+    this.subToolbar = toolbar.getControl(
       "BurgasDataPanelToolbarGroup"
     );
     if (!this.subToolbar) {
       this.subToolbar = new Autodesk.Viewing.UI.ControlGroup(
         "BurgasDataPanelToolbarGroup"
       );
-      this.viewer.toolbar.addControl(this.subToolbar);
+      toolbar.addControl(this.subToolbar);
+    }
+    if (this._button) {
+      return;
     }
     this._button = new Autodesk.Viewing.UI.Button("burgasButtonRooms");
     this._button.onClick = function (e) {

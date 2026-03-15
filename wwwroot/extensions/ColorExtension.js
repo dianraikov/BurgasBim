@@ -53,10 +53,14 @@ class ColorExtension extends Autodesk.Viewing.Extension {
   }
 
   async onToolbarCreated() {
-    this._group = this.viewer.toolbar.getControl("BurgasColoursToolbarGroup")
+    if (this._button) {
+      return;
+    }
+    const toolbar = this.viewer.burgasToolbar || this.viewer.toolbar
+    this._group = toolbar.getControl("BurgasColoursToolbarGroup")
     if (!this._group) {
       this._group = new Autodesk.Viewing.UI.ControlGroup("BurgasColoursToolbarGroup")
-      this.viewer.toolbar.addControl(this._group)
+      toolbar.addControl(this._group)
     }
 
     const buildingtype = await this.getBuildingTypeFromDatabase()
@@ -79,7 +83,6 @@ class ColorExtension extends Autodesk.Viewing.Extension {
     )
 
     this._button = new Autodesk.Viewing.UI.Button("ColorExtensionButton")
-    this._button.icon.style.backgroundImage = "url('wwwrootimagespaleta-de-color.png')"
     this._button.setToolTip("ColorExtension")
 
     this._button.onClick = async () => {

@@ -37,14 +37,15 @@ class editFieldsRooms_Extension extends Autodesk.Viewing.Extension {
     }
 
     // button to show the docking panel
-    this.subToolbar = this.viewer.toolbar.getControl(
+    const toolbar = this.viewer.burgasToolbar || this.viewer.toolbar;
+    this.subToolbar = toolbar.getControl(
       "BurgasColumnToolbarGroup"
     );
     if (!this.subToolbar) {
       this.subToolbar = new Autodesk.Viewing.UI.ControlGroup(
         "BurgasColumnToolbarGroup"
       );
-      this.viewer.toolbar.addControl(this.subToolbar);
+      toolbar.addControl(this.subToolbar);
     }
     this._button = new Autodesk.Viewing.UI.Button("editFields_ExtensionButton");
     this._button.onClick = function (e) {

@@ -44,7 +44,6 @@ export function initViewer(container) {
       const viewer = new Autodesk.Viewing.GuiViewer3D(container, config);
       viewer.start();
       viewer.setTheme("light-theme");
-      loadModel(viewer);
       resolve(viewer);
     });
   });
@@ -58,7 +57,7 @@ export function loadModel(viewer, urn) {
         .search({ name: "New Construction", type: "geometry" });
       resolve(viewer.loadDocumentNode(doc, viewables[0]));
     }
-    function onDocumentLoadFailure(code, message) {
+    function onDocumentLoadFailure(code, message, errors) {
       reject({ code, message, errors });
     }
     viewer.setLightPreset(0);

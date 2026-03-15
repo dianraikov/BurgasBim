@@ -12,6 +12,10 @@ class BurgasPanelExtension_Equipments extends Autodesk.Viewing.Extension {
       fetch(conexion)
         .then((response) => response.json())
         .then(function (data) {
+          if (!data || data.length === 0) {
+            console.warn('burgaspanel_equipments: no data returned for room code', num_hab);
+            return;
+          }
           var formulario = document.createElement("form");
           formulario.id = "burgasFormEquipments";
           formulario.appendChild(document.createElement("br"));
@@ -21,7 +25,7 @@ class BurgasPanelExtension_Equipments extends Autodesk.Viewing.Extension {
   
           const labels = ["Код на помещението","скрива се","Код на оборудването","Вид оборудването","скрива се","Категория","Под категория","Общо бройки","Забележка оборудването","скрива се","скрива се","Доставна цена с ДДС","скрива се","Марка","Модел","Дата на въвеждане в експлотация","Общи забележки","Линк към оборудването","Поддръжка","скрива се","Линк за","Доставчик","Гаранционен срок"];
   
-          data.forEach((equipo) => {
+          data.forEach((equipo, equipoIndex) => {
             var details = document.createElement("details");
             var summary = document.createElement("summary");
             var fieldset = document.createElement("fieldset");
@@ -33,12 +37,12 @@ class BurgasPanelExtension_Equipments extends Autodesk.Viewing.Extension {
               displayLabel = displayLabel.charAt(0).toUpperCase() + displayLabel.slice(1);
   
               var etiquetaNombre = document.createElement("label");
-              etiquetaNombre.id = "atributo";
+              etiquetaNombre.id = "atributo_" + equipoIndex + "_" + index;
               etiquetaNombre.textContent = displayLabel;
-  
+
               var inputNombre = (prop === "REFERENCE_SPECIFICATIONS") ? document.createElement("textarea") : document.createElement("input");
               if (prop !== "REFERENCE_SPECIFICATIONS") inputNombre.type = "text";
-              inputNombre.id = (prop === "REFERENCE_SPECIFICATIONS") ? "textarea" : "valor";
+              inputNombre.id = (prop === "REFERENCE_SPECIFICATIONS") ? "textarea_" + equipoIndex + "_" + index : "valor_" + equipoIndex + "_" + index;
               inputNombre.name = prop;
   
               if (prop === "ID_EQUIP") { summary.innerHTML = val; var id_equip = val; }
@@ -148,14 +152,18 @@ class BurgasPanelExtension_Equipments extends Autodesk.Viewing.Extension {
     }
 
     // button to show the docking panel
-    this.subToolbar = this.viewer.toolbar.getControl(
+    const toolbar = this.viewer.burgasToolbar || this.viewer.toolbar;
+    this.subToolbar = toolbar.getControl(
       "BurgasDataPanelToolbarGroup"
     );
     if (!this.subToolbar) {
       this.subToolbar = new Autodesk.Viewing.UI.ControlGroup(
         "BurgasDataPanelToolbarGroup"
       );
-      this.viewer.toolbar.addControl(this.subToolbar);
+      toolbar.addControl(this.subToolbar);
+    }
+    if (this._button) {
+      return;
     }
     this._button = new Autodesk.Viewing.UI.Button("burgasButtonEquipment");
     this._button.onClick = function (e) {

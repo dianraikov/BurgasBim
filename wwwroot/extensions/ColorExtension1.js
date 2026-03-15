@@ -56,13 +56,17 @@ class ColorExtension1 extends Autodesk.Viewing.Extension {
   }
 
   async onToolbarCreated() {
+    if (this._button) {
+      return;
+    }
     // Create group if doesn't exist
-    this._group = this.viewer.toolbar.getControl("BurgasColoursToolbarGroup");
+    const toolbar = this.viewer.burgasToolbar || this.viewer.toolbar;
+    this._group = toolbar.getControl("BurgasColoursToolbarGroup");
     if (!this._group) {
       this._group = new Autodesk.Viewing.UI.ControlGroup(
         "BurgasColoursToolbarGroup"
       );
-      this.viewer.toolbar.addControl(this._group);
+      toolbar.addControl(this._group);
     }
 
     // Get buildingtype from backend

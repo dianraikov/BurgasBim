@@ -45,6 +45,10 @@ aislarRooms.prototype.createUI = function() {
         "Room",
         (dbIds) => {
           viewer.model.getProperties(dbIds[0], (data) => {
+            if (!data || !data.properties || !data.properties[3]) {
+              console.warn('aislarRooms: expected property at index 3 not found');
+              return;
+            }
             viewer.isolate(data.properties[3].displayValue);
           });
         },
@@ -69,8 +73,9 @@ aislarRooms.prototype.createUI = function() {
     this.subToolbar = new Autodesk.Viewing.UI.ControlGroup('my-custom-view-toolbar');
     this.subToolbar.addControl(button1);
     // this.subToolbar.addControl(button2);
-  
-    viewer.toolbar.addControl(this.subToolbar);
+
+    var toolbar = viewer.burgasToolbar || viewer.toolbar;
+    toolbar.addControl(this.subToolbar);
   };
 
 aislarRooms.prototype.unload = function () {
