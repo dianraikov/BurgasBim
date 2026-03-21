@@ -51,6 +51,9 @@ export function initViewer(container) {
 
 export function loadModel(viewer, urn) {
   return new Promise(function (resolve, reject) {
+    // Unload all existing models before loading the new one
+    viewer.getAllModels().forEach(m => viewer.unloadModel(m));
+
     function onDocumentLoadSuccess(doc) {
       var viewables = doc
         .getRoot()

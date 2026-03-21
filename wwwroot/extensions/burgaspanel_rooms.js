@@ -3,27 +3,40 @@ class BurgasPanelExtension_Rooms extends Autodesk.Viewing.Extension {
     super(viewer, options);
     this._group = null;
     this._button = null;
+    this._formCounter = 0; // fixes duplicate IDs
+  }
+
+  clearPanel() {
+    var div = document.getElementById("panelContentRooms");
+    if (div) div.innerHTML = "";
   }
 
   crearFormulario(elements) {
+    var _this = this;
+    var instanceId = ++this._formCounter; // unique per call, fixes duplicate IDs
+
     elements.forEach(function (element) {
       var num_hab = element.properties[0].displayValue;
       var conexion = "/api/query/pg_get_room/?room_code=" + num_hab;
       fetch(conexion)
         .then((response) => response.json())
         .then(function (data) {
+          // If a newer call came in while we were fetching, discard this result
+          if (instanceId !== _this._formCounter) return;
           if (!data || data.length === 0) {
-            console.warn('burgaspanel_rooms: no data returned for room code', num_hab);
+            console.warn("burgaspanel_rooms: no data for room code", num_hab);
             return;
           }
+
+          var div = document.getElementById("panelContentRooms");
+          if (!div) return;
+
           var formulario = document.createElement("form");
           formulario.id = "burgasFormRooms";
 
-          var div = document.getElementById("panelContentRooms");
           div.appendChild(formulario);
 
           const keys = Object.keys(data[0]);
-
           keys[0] = "Код на помещение";
           keys[1] = "Функционална зона";
           keys[2] = "Структури (клиника)";
@@ -35,86 +48,76 @@ class BurgasPanelExtension_Rooms extends Autodesk.Viewing.Extension {
           keys[12] = "Специфични изисквания";
           keys[14] = "Дигитален архив";
 
+          const skipIndexes = new Set([4, 6, 7, 9, 10, 13, 15]);
+
           keys.forEach((key, index) => {
-            if (index === 4) return;
-            if (index === 6) return;
-            if (index === 7) return;
-            if (index === 9) return;
-            if (index === 10) return;
-            if (index === 13) return;
-           if (index === 15) return;
+            if (skipIndexes.has(index)) return;
 
             const originalKey = Object.keys(data[0])[index];
             const value = data[0][originalKey];
 
-            var etiquetaNombreHab = document.createElement("label");
-            etiquetaNombreHab.id = "atributo_room_" + index;
-            etiquetaNombreHab.textContent = key;
+            var label = document.createElement("label");
+            // Use instanceId to guarantee unique IDs across calls
+            label.id = "atributo_room_" + instanceId + "_" + index;
+            label.textContent = key;
 
-            var inputNombreHab = document.createElement("input");
-            inputNombreHab.type = "text";
-            inputNombreHab.id = "valor_room_" + index;
-            inputNombreHab.name = originalKey;
-            inputNombreHab.value = value;
-            inputNombreHab.required = true;
+            var input = document.createElement("input");
+            input.type = "text";
+            input.id = "valor_room_" + instanceId + "_" + index;
+            input.name = originalKey;
+            input.value = value;
+            input.required = true;
 
             if (originalKey === "Numero habitacion") {
-              inputNombreHab.readOnly = true;
-              etiquetaNombreHab.textContent = "Revit room code (not editable)";
+              input.readOnly = true;
+              label.textContent = "Revit room code (not editable)";
             } else {
-              inputNombreHab.addEventListener("focusout", function (event) {
-                let element = event.target;
-                var columna = element.name;
-                var valor = element.value;
-                var datos = {
-                  num_hab: num_hab,
-                  columna: columna,
-                  valor: valor,
-                };
+              input.addEventListener("focusout", function (event) {
+                var el = event.target;
                 fetch("/api/query/pg_post_room", {
                   method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify(datos),
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({
+                    num_hab: num_hab,
+                    columna: el.name,
+                    valor: el.value,
+                  }),
                 })
-                  .then((response) => response.json())
-                  .then((data) => {
-                    console.log(data);
-                  })
-                  .catch((error) => {
-                    console.error("Error al enviar los datos:", error);
-                  });
+                  .then((r) => r.json())
+                  .then((d) => console.log(d))
+                  .catch((err) => console.error("Error saving room:", err));
               });
             }
 
-            formulario.appendChild(etiquetaNombreHab);
-            formulario.appendChild(inputNombreHab);
+            formulario.appendChild(label);
+            formulario.appendChild(input);
           });
         });
     });
   }
 
   loadObjectCode(elements) {
-    var form = document.getElementById("burgasFormRooms");
-    if (form) {
-      var div = document.getElementById("panelContentRooms");
-      div.removeChild(form);
-      setTimeout(() => {
-        this.crearFormulario(elements);
-      }, 100);
-    } else {
-      this.crearFormulario(elements);
-    }
+    // Clear panel immediately (no setTimeout race)
+    this.clearPanel();
+    this.crearFormulario(elements);
   }
 
   load() {
     console.log("BurgasPanelExtension_Rooms has been loaded");
     var _this = this;
+
+    // Clear the panel whenever a new model finishes loading
+    this.viewer.addEventListener(
+      Autodesk.Viewing.MODEL_ROOT_LOADED_EVENT,
+      function () {
+        _this.clearPanel();
+      }
+    );
+
     this.viewer.addEventListener(
       Autodesk.Viewing.SELECTION_CHANGED_EVENT,
       function (e) {
-        if (e.dbIdArray.length == 0) {
+        if (e.dbIdArray.length === 0) {
           _this.subToolbar.setVisible(true);
           if (_this.panel) _this.panel.setVisible(false);
           return;
@@ -125,9 +128,10 @@ class BurgasPanelExtension_Rooms extends Autodesk.Viewing.Extension {
           function (elements) {
             _this.subToolbar.setVisible(elements.length > 0);
             if (_this.panel) _this.panel.removeAllProperties();
-            if (_this.panel && elements.length > 0)
+            if (_this.panel && elements.length > 0) {
               var selection = _this.viewer.getSelection();
-            _this.viewer.fitToView(selection);
+              _this.viewer.fitToView(selection);
+            }
             _this.loadObjectCode(elements);
           }
         );
@@ -167,18 +171,14 @@ class BurgasPanelExtension_Rooms extends Autodesk.Viewing.Extension {
     }
 
     const toolbar = this.viewer.burgasToolbar || this.viewer.toolbar;
-    this.subToolbar = toolbar.getControl(
-      "BurgasDataPanelToolbarGroup"
-    );
+    this.subToolbar = toolbar.getControl("BurgasDataPanelToolbarGroup");
     if (!this.subToolbar) {
       this.subToolbar = new Autodesk.Viewing.UI.ControlGroup(
         "BurgasDataPanelToolbarGroup"
       );
       toolbar.addControl(this.subToolbar);
     }
-    if (this._button) {
-      return;
-    }
+    if (this._button) return;
     this._button = new Autodesk.Viewing.UI.Button("burgasButtonRooms");
     this._button.onClick = function (e) {
       _this.panel.setVisible(!_this.panel.isVisible());
