@@ -3,139 +3,73 @@ class BurgasPanelExtension_Equipments extends Autodesk.Viewing.Extension {
     super(viewer, options);
     this._group = null;
     this._button = null;
-    this._formCounter = 0;
   }
-
-  clearPanel() {
-    var div = document.getElementById("panelContentEquipments");
-    if (div) div.innerHTML = "";
-  }
-
   crearFormulario(elements) {
-    var _this = this;
-    var instanceId = ++this._formCounter;
-
     elements.forEach(function (element) {
       var num_hab = element.properties[0].displayValue;
       var conexion = "/api/query/pg_get_equipment/?room_code=" + num_hab;
-
+  
       fetch(conexion)
         .then((response) => response.json())
         .then(function (data) {
-          if (instanceId !== _this._formCounter) return;
           if (!data || data.length === 0) {
-            console.warn("burgaspanel_equipments: no data returned for room code", num_hab);
+            console.warn('burgaspanel_equipments: no data returned for room code', num_hab);
             return;
           }
-
-          var div = document.getElementById("panelContentEquipments");
-          if (!div) return;
-
           var formulario = document.createElement("form");
           formulario.id = "burgasFormEquipments";
           formulario.appendChild(document.createElement("br"));
+  
+          var div = document.getElementById("panelContentEquipments");
           div.appendChild(formulario);
-
-          const labels = [
-            "Код на помещението",
-            "скрива се",
-            "Код на оборудването",
-            "Вид оборудването",
-            "скрива се",
-            "Категория",
-            "Под категория",
-            "Общо бройки",
-            "Забележка оборудването",
-            "скрива се",
-            "скрива се",
-            "Доставна цена с ДДС",
-            "скрива се",
-            "Марка",
-            "Модел",
-            "Дата на въвеждане в експлотация",
-            "Общи забележки",
-            "Линк към оборудването",
-            "Поддръжка",
-            "скрива се",
-            "Линк за",
-            "Доставчик",
-            "Гаранционен срок",
-          ];
-
+  
+          const labels = ["Код на помещението","скрива се","Код на оборудването","Вид оборудването","скрива се","Категория","Под категория","Общо бройки","Забележка оборудването","скрива се","скрива се","Доставна цена с ДДС","скрива се","Марка","Модел","Дата на въвеждане в експлотация","Общи забележки","Линк към оборудването","Поддръжка","скрива се","Линк за","Доставчик","Гаранционен срок"];
+  
           data.forEach((equipo, equipoIndex) => {
             var details = document.createElement("details");
             var summary = document.createElement("summary");
             var fieldset = document.createElement("fieldset");
             const fields = Object.entries(equipo);
-            var id_equip;
-
+  
             fields.forEach(([prop, val], index) => {
               if (labels[index] && labels[index].toLowerCase() === "скрива се") return;
               let displayLabel = labels[index] || prop;
               displayLabel = displayLabel.charAt(0).toUpperCase() + displayLabel.slice(1);
-
+  
               var etiquetaNombre = document.createElement("label");
-              etiquetaNombre.id = "atributo_" + instanceId + "_" + equipoIndex + "_" + index;
+              etiquetaNombre.id = "atributo_" + equipoIndex + "_" + index;
               etiquetaNombre.textContent = displayLabel;
 
-              var inputNombre =
-                prop === "REFERENCE_SPECIFICATIONS"
-                  ? document.createElement("textarea")
-                  : document.createElement("input");
-
+              var inputNombre = (prop === "REFERENCE_SPECIFICATIONS") ? document.createElement("textarea") : document.createElement("input");
               if (prop !== "REFERENCE_SPECIFICATIONS") inputNombre.type = "text";
-
-              inputNombre.id =
-                prop === "REFERENCE_SPECIFICATIONS"
-                  ? "textarea_" + instanceId + "_" + equipoIndex + "_" + index
-                  : "valor_" + instanceId + "_" + equipoIndex + "_" + index;
-
+              inputNombre.id = (prop === "REFERENCE_SPECIFICATIONS") ? "textarea_" + equipoIndex + "_" + index : "valor_" + equipoIndex + "_" + index;
               inputNombre.name = prop;
-
-              if (prop === "ID_EQUIP") {
-                summary.innerHTML = val;
-                id_equip = val;
-              }
-
+  
+              if (prop === "ID_EQUIP") { summary.innerHTML = val; var id_equip = val; }
               if (prop === "URL") {
                 inputNombre.className = "link-input";
-                inputNombre.addEventListener("click", function () {
-                  window.open(val, "_blank");
-                });
+                inputNombre.addEventListener("click", function () { window.open(val, "_blank"); });
               }
-
-              if (prop === "docs_link") {
+              if( prop === "docs_link")
+              {
                 inputNombre.className = "link-input";
-                inputNombre.addEventListener("click", function () {
-                  window.open(val, "_blank");
-                });
+                inputNombre.addEventListener("click", function () { window.open(val, "_blank"); });
               }
-
               inputNombre.value = val;
               inputNombre.required = true;
-
-              if (prop === "ID_EQUIP" || prop === "NUMERO_HABITACION") {
-                inputNombre.readOnly = true;
-              }
-
+              if (prop === "ID_EQUIP" || prop === "NUMERO_HABITACION") inputNombre.readOnly = true;
+  
               inputNombre.addEventListener("focusout", function (event) {
-                let el = event.target;
-                var datos = {
-                  id_equip: id_equip,
-                  num_hab: num_hab,
-                  columna: el.name,
-                  valor: el.value,
-                };
+                let element = event.target, columna = element.name, valor = element.value;
+                var datos = { id_equip: id_equip, num_hab: num_hab, columna: columna, valor: valor };
                 fetch("/api/query/pg_post_equipment", {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify(datos),
+                  method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(datos)
                 })
                   .then((response) => response.json())
                   .then((data) => console.log(data))
-                  .catch((error) => console.error("Error saving equipment:", error));
+                  .catch((error) => console.error("Error al enviar los datos:", error));
               });
-
+  
               fieldset.appendChild(etiquetaNombre);
               fieldset.appendChild(inputNombre);
               details.appendChild(summary);
@@ -146,27 +80,30 @@ class BurgasPanelExtension_Equipments extends Autodesk.Viewing.Extension {
         });
     });
   }
+  
+  
+  
 
   loadObjectCode(elements) {
-    this.clearPanel();
-    this.crearFormulario(elements);
+    var form = document.getElementById("burgasFormEquipments");
+    if (form) {
+      //Obtener el div generado al crearse el panel
+      var div = document.getElementById("panelContentEquipments");
+      div.removeChild(form);
+      setTimeout(() => {
+        this.crearFormulario(elements);
+      }, 200);
+    } else {
+      this.crearFormulario(elements);
+    }
   }
-
   load() {
     console.log("BurgasPanelExtension_Equipments has been loaded");
     var _this = this;
-
-    this.viewer.addEventListener(
-      Autodesk.Viewing.MODEL_ROOT_LOADED_EVENT,
-      function () {
-        _this.clearPanel();
-      }
-    );
-
     this.viewer.addEventListener(
       Autodesk.Viewing.SELECTION_CHANGED_EVENT,
       function (e) {
-        if (e.dbIdArray.length === 0) {
+        if (e.dbIdArray.length == 0) {
           _this.subToolbar.setVisible(true);
           if (_this.panel) _this.panel.setVisible(false);
           return;
@@ -177,10 +114,9 @@ class BurgasPanelExtension_Equipments extends Autodesk.Viewing.Extension {
           function (elements) {
             _this.subToolbar.setVisible(elements.length > 0);
             if (_this.panel) _this.panel.removeAllProperties();
-            if (_this.panel && elements.length > 0) {
+            if (_this.panel && elements.length > 0)
               var selection = _this.viewer.getSelection();
               _this.viewer.fitToView(selection);
-            }
             _this.loadObjectCode(elements);
           }
         );
@@ -190,6 +126,7 @@ class BurgasPanelExtension_Equipments extends Autodesk.Viewing.Extension {
   }
 
   unload() {
+    // Clean our UI elements if we added any
     this.viewer.toolbar.removeControl(this.subToolbar);
     return true;
   }
@@ -202,9 +139,9 @@ class BurgasPanelExtension_Equipments extends Autodesk.Viewing.Extension {
     this.onToolbarCreatedBinded = null;
     this.createUI();
   }
-
   createUI() {
     var _this = this;
+    // need to create the panel for later use
     if (_this.panel == null) {
       _this.panel = new BurgasPanel_Equipment(
         _this.viewer,
@@ -214,18 +151,23 @@ class BurgasPanelExtension_Equipments extends Autodesk.Viewing.Extension {
       );
     }
 
+    // button to show the docking panel
     const toolbar = this.viewer.burgasToolbar || this.viewer.toolbar;
-    this.subToolbar = toolbar.getControl("BurgasDataPanelToolbarGroup");
+    this.subToolbar = toolbar.getControl(
+      "BurgasDataPanelToolbarGroup"
+    );
     if (!this.subToolbar) {
       this.subToolbar = new Autodesk.Viewing.UI.ControlGroup(
         "BurgasDataPanelToolbarGroup"
       );
       toolbar.addControl(this.subToolbar);
     }
-    if (this._button) return;
-
+    if (this._button) {
+      return;
+    }
     this._button = new Autodesk.Viewing.UI.Button("burgasButtonEquipment");
     this._button.onClick = function (e) {
+      // show/hide docking panel
       _this.panel.setVisible(!_this.panel.isVisible());
     };
     this._button.addClass("BurgasPanelIcon");
@@ -239,13 +181,13 @@ class BurgasPanel_Equipment extends Autodesk.Viewing.UI.PropertyPanel {
   constructor(viewer, container, id, title, options) {
     super(container, id, title, options);
     this.viewer = viewer;
-    this.container.style.left = "10px";
-    this.container.style.top = "10px";
+    this.container.style.left = "10px"; // Just initing, docking will overwrite this
+    this.container.style.top = "10px"; // Just initing, docking will overwrite this
     this.container.style.resize = "auto";
-    this.container.style.width = "450px";
-    this.container.style.minHeight = "600px";
-    this.container.style.minWidth = "300px";
-
+    this.container.style.width = 450 + "px";
+    this.container.style.minHeight = 600 + "px";
+    this.container.style.minWidth = 300 + "px";
+    // UI
     this.div = document.createElement("div");
     this.div.id = "panelContentEquipments";
     this.scrollContainer.appendChild(this.div);
